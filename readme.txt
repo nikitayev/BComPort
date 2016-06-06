@@ -46,3 +46,6 @@
 2.10+  06.06.2016 - Добавил поддержку Delphi XE 8. Алексей Никитаев
 
 ===============================================================================
+
+com0com 3.0.0.0 signed брать тут: https://code.google.com/archive/p/powersdr-iq/downloads
+Hercules SETUP utility брать тут: http://www.hw-group.com/products/hercules/index_en.html
