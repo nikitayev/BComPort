@@ -1386,19 +1386,22 @@ begin
       DataLen  := 256;
       SetLength(ValueName, ValueLen);
       SetLength(Data, DataLen);
-//      ErrCode := RegEnumValue(KeyHandle, Index, pwidechar(ValueName),
-      ErrCode := RegEnumValue(KeyHandle, Index, PChar(ValueName),
 {$IFDEF VER120}
+      ErrCode := RegEnumValue(KeyHandle, Index, pwidechar(ValueName),
         cardinal(ValueLen),
 {$ELSE}
+      ErrCode := RegEnumValue(KeyHandle, Index, PChar(ValueName),
         ValueLen,
 {$ENDIF}
         nil, @ValueType, PByte(pansichar(Data)), @DataLen);
       if ErrCode = ERROR_SUCCESS then
       begin
         SetLength(Data, DataLen);
-//        TmpPorts.Add(ReplaceStr(Data, #0, ''));
+{$IFDEF VER120}
+        TmpPorts.Add(ReplaceStr(Data, #0, ''));
+{$ELSE}
         TmpPorts.Add(StringReplace(Data, #0, '', [rfReplaceAll]));
+{$ENDIF}
         Inc(Index);
       end
       else
