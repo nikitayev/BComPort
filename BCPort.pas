@@ -19,16 +19,17 @@ uses
   Windows, Messages, SysUtils, Classes, U_serialporttypes, DateUtils, Math, StrUtils;
 
 {$B-,H+,X+}
-{$I jcl.inc}
+{.$I jcl.inc}
 {$IFDEF RTL140_UP}
 {$DEFINE D6UP}
 {$ENDIF}
 
 type
-  TBaudRate = cardinal; //(br110, br300, br600, br1200, br2400, br4800, br9600, br14400, br19200, br38400, br56000, br57600,
-    //br115200, br128000, br256000);
-  TBaudRateStd = (br110, br300, br600, br1200, br2400, br4800, br9600, br14400, br19200, br38400, br56000, br57600,
+  //TBaudRate = cardinal;
+  TBaudRate = (br110, br300, br600, br1200, br2400, br4800, br9600, br14400, br19200, br38400, br56000, br57600,
     br115200, br128000, br256000);
+//  TBaudRateStd = (br110, br300, br600, br1200, br2400, br4800, br9600, br14400, br19200, br38400, br56000, br57600,
+//    br115200, br128000, br256000);
   TByteSize = (bs5, bs6, bs7, bs8);
   TComErrors = set of (ceFrame, ceRxParity, ceOverrun, ceBreak, ceIO, ceMode, ceRxOver, ceTxFull);
   TComEvents = set of (evRxChar, evTxEmpty, evRing, evCTS, evDSR, evRLSD, evError, evRx80Full);
@@ -41,7 +42,8 @@ type
   TRxCharEvent = procedure(Sender: TObject; Count: integer) of object;
 
 const
-  cBaudRateStr: array [TBaudRateStd] of string =
+//  cBaudRateStr: array [TBaudRateStd] of string =
+  cBaudRateStr: array [TBaudRate] of string =
     ('110', '300', '600', '1200', '2400', '4800', '9600', '14400', '19200', '38400', '56000', '57600',
     '115200', '128000', '256000');
 
@@ -483,7 +485,8 @@ constructor TBComPort.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FComponentStyle := FComponentStyle - [csInheritable];
-  FBaudRate := 9600;
+//  FBaudRate := 9600;
+  FBaudRate := br9600;
   FByteSize := bs8;
   FConnected := false;
   FCTPriority := tpNormal;
@@ -626,9 +629,9 @@ begin
 end;
 
 procedure TBComPort.ApplyDCB;
-//const
-//  CBaudRate: array [TBaudRate] of integer = (CBR_110, CBR_300, CBR_600, CBR_1200, CBR_2400, CBR_4800, CBR_9600,
-//    CBR_14400, CBR_19200, CBR_38400, CBR_56000, CBR_57600, CBR_115200, CBR_128000, CBR_256000);
+const
+  CBaudRate: array [TBaudRate] of integer = (CBR_110, CBR_300, CBR_600, CBR_1200, CBR_2400, CBR_4800, CBR_9600,
+    CBR_14400, CBR_19200, CBR_38400, CBR_56000, CBR_57600, CBR_115200, CBR_128000, CBR_256000);
 var
   DCB: TDCB;
 begin
@@ -636,10 +639,11 @@ begin
   begin
     FillChar(DCB, SizeOf(TDCB), 0);
     DCB.DCBlength := SizeOf(TDCB);
-    DCB.BaudRate := FBaudRate;
+//    DCB.BaudRate := FBaudRate;
+    DCB.BaudRate := CBaudRate[FBaudRate];
     DCB.ByteSize := Ord(TByteSize(FByteSize)) + 5;
-    //DCB.Flags := 1 or ($30 and (DTR_CONTROL_ENABLE shl 4)) or ($3000 and (RTS_CONTROL_ENABLE shl 12));
-    DCB.Flags := 1;
+    DCB.Flags := 1 or ($30 and (DTR_CONTROL_ENABLE shl 4)) or ($3000 and (RTS_CONTROL_ENABLE shl 12));
+    //DCB.Flags := 1;
     if FParity <> paNone then
       DCB.Flags := DCB.Flags or 2;
     DCB.Parity := Ord(TParity(FParity));
@@ -1382,7 +1386,8 @@ begin
       DataLen  := 256;
       SetLength(ValueName, ValueLen);
       SetLength(Data, DataLen);
-      ErrCode := RegEnumValue(KeyHandle, Index, pwidechar(ValueName),
+//      ErrCode := RegEnumValue(KeyHandle, Index, pwidechar(ValueName),
+      ErrCode := RegEnumValue(KeyHandle, Index, PChar(ValueName),
 {$IFDEF VER120}
         cardinal(ValueLen),
 {$ELSE}
@@ -1392,7 +1397,8 @@ begin
       if ErrCode = ERROR_SUCCESS then
       begin
         SetLength(Data, DataLen);
-        TmpPorts.Add(ReplaceStr(Data, #0, ''));
+//        TmpPorts.Add(ReplaceStr(Data, #0, ''));
+        TmpPorts.Add(StringReplace(Data, #0, '', [rfReplaceAll]));
         Inc(Index);
       end
       else
@@ -1410,7 +1416,8 @@ end;
 
 procedure EnumBaudRates(BaudRates: TStrings);
 var
-  i: TBaudRateStd;
+//  i: TBaudRateStd;
+  i: TBaudRate;
 begin
   BaudRates.BeginUpdate;
   BaudRates.Clear;
@@ -1421,7 +1428,8 @@ end;
 
 function GetBaudRateStrIndex(const aBaudRate: string): integer;
 var
-  i: TBaudRateStd;
+//  i: TBaudRateStd;
+  i: TBaudRate;
 begin
   Result := integer(br9600);
   for I := br110 to br256000 do
@@ -1442,7 +1450,8 @@ begin
     try
       aBComPort.Port := zINI.ReadString(aSection, 'Port', 'COM1');
       aBComPort.BaudRate := TBaudRate(GetBaudRateStrIndex(zINI.ReadString(aSection, 'BaudRate',
-        IntToStr(aBComPort.BaudRate))));
+//        IntToStr(aBComPort.BaudRate))));
+        cBaudRateStr[aBComPort.BaudRate])));
       aBComPort.ByteSize := TByteSize(zINI.ReadInteger(aSection, 'ByteSize', integer(aBComPort.ByteSize)));
       aBComPort.InBufSize := zINI.ReadInteger(aSection, 'InBufSize', aBComPort.InBufSize);
       aBComPort.OutBufSize := zINI.ReadInteger(aSection, 'OutBufSize', aBComPort.OutBufSize);
@@ -1479,7 +1488,7 @@ begin
     zINI := TIniFile.Create(aFileName);
     try
       zINI.WriteString(aSection, 'Port', aBComPort.Port);
-      zINI.WriteString(aSection, 'BaudRate', IntToStr(aBComPort.BaudRate));
+      zINI.WriteString(aSection, 'BaudRate', cBaudRateStr[aBComPort.BaudRate]);
       zINI.WriteInteger(aSection, 'ByteSize', integer(aBComPort.ByteSize));
       zINI.WriteInteger(aSection, 'InBufSize', integer(aBComPort.InBufSize));
       zINI.WriteInteger(aSection, 'OutBufSize', integer(aBComPort.OutBufSize));
